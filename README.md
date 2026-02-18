@@ -1,20 +1,19 @@
 Architecture Technique
 Le projet repose sur une architecture hybride Cloud LLM / Local Embeddings, optimisant vitesse, coût et performance.
-code
-Mermaid
+```mermaid
 graph TD
-    subgraph "Ingestion de Données"
+    subgraph Ingestion ["Ingestion de Données"]
         A[Offre d'Emploi / Texte] --> B[Groq LLM - Extraction NLP]
         B --> C[Liste Compétences JSON]
     end
 
-    subgraph "Moteur Prédictif (ML)"
+    subgraph ML ["Moteur Prédictif (ML)"]
         C --> D[XGBoost Regressor]
         E[Données Marché .CSV] --> D
         D --> F[Salaire Estimé + KPIs]
     end
 
-    subgraph "Système RAG (Analyse de CV)"
+    subgraph RAG ["Système RAG (Analyse de CV)"]
         G[PDF CV] --> H[PyPDFLoader + Splitter]
         H --> I[HuggingFace Embeddings - Local]
         I --> J[FAISS Vector Store - Memory]
