@@ -1,5 +1,6 @@
-Architecture Technique
-Le projet repose sur une architecture hybride Cloud LLM / Local Embeddings, optimisant vitesse, coût et performance.
+
+## Architecture Technique
+
 ```mermaid
 graph TD
     subgraph Ingestion ["Ingestion de Données"]
