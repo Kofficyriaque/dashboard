@@ -512,7 +512,7 @@ if st.session_state['prediction']:
 tab_candidat, tab_recruteur = st.tabs(["👤 Espace Candidat (Coach IA)", "🏢 Espace Recruteur (Tri CVs)"])
 
 with tab_candidat:
-    st.info(f"**Mode Coaching Qwen :** Posez vos questions sur votre compatibilité avec le poste.")
+    st.info(f"**Mode Coaching:** Posez vos questions sur votre compatibilité avec le poste.")
     col_cv, col_chat = st.columns([1, 2])
 
     with col_cv:
@@ -554,7 +554,7 @@ with tab_candidat:
                 with chat_container:
                     with st.chat_message("user"): st.markdown(action_prompt)
                     with st.chat_message("assistant"):
-                        with st.spinner("Qwen réfléchit..."):
+                        with st.spinner("réfléchit..."):
                             # APPEL AU NOUVEAU RAG ENGINE
                             qa_chain = get_rag_chain(st.session_state.vector_store_candidat, GROQ_API_KEY)
                             
