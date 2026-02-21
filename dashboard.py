@@ -565,7 +565,7 @@ with tab_candidat:
                             st.markdown(response)
                     
                   
-                    # On laisse Streamlit finir le script. Au prochain clic, l'historique sera réaffiché par le bloc 3.
+    # On laisse Streamlit finir le script. Au prochain clic, l'historique sera réaffiché par le bloc 3.
     # --- ONGLET 2 : RECRUTEUR (Bulk) ---
     with tab_recruteur:
         st.markdown("#### 📂 Analyse d'un dossier de resume")

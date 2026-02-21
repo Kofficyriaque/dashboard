@@ -3,3 +3,4 @@ __pycache__/
 .streamlit/
 my_db/
 *.pkl
+.vscode
