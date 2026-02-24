@@ -1,3 +1,6 @@
+from urllib.parse import unquote
+
+import requests
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -7,17 +10,16 @@ import os
 import json
 import numpy as np
 from datetime import datetime, timedelta
-import time 
-import pickle 
-from collections import Counter  
-from rag_engine import process_pdf_and_create_vector_db, get_rag_chain 
+import time
+import joblib
+import xgboost 
+from collections import Counter
+from rag_engine import process_pdf_and_create_vector_db, get_rag_chain
 from pypdf import PdfReader
 from sklearn.metrics.pairwise import cosine_similarity
 from langchain_community.embeddings import HuggingFaceEmbeddings
-import numpy as np
-from langchain_huggingface import HuggingFaceEndpoint
-from langchain_core.output_parsers import JsonOutputParser  
-from langchain_groq import ChatGroq  
+from langchain_core.output_parsers import JsonOutputParser
+from langchain_groq import ChatGroq
 from dotenv import load_dotenv
 # ==========================================
 # 1. CONFIGURATION & STYLING PRO
@@ -87,15 +89,20 @@ st.markdown("""
 
 # --- Placeholder for your specific ML Model Loading ---
 
+
 @st.cache_resource
 def load_prediction_model():
     """Loads the real XGBoost model."""
     model_path = "salary_model_xgboost.pkl"
     
     if os.path.exists(model_path):
-        with open(model_path, "rb") as f:
-            model = pickle.load(f)
-        return model
+        try:
+            model = joblib.load(model_path)
+            return model
+        except Exception as e:
+            st.error("Erreur lors du chargement du modèle.")
+            st.exception(e)
+            return None
     else:
         st.error("Model file not found. Please put 'salary_model_xgboost.pkl' in the folder.")
         return None
@@ -197,7 +204,6 @@ def load_geojson(scale="regions"):
     }
     
     try:
-        import requests
         r = requests.get(urls[scale])
         return r.json()
     except Exception as e:
@@ -303,7 +309,7 @@ if 'extracted_skills' not in st.session_state:
 # ==========================================
 
 # HEADER
-st.title("PredicIT • Talent Intelligence & Compensation Analytics")
+st.title("PredicIT Talent Intelligence & Compensation Analytics")
 st.markdown(f"Analyse de marché pour **{target_metier}** en **{target_region}**.")
 st.divider()
 
@@ -333,9 +339,9 @@ if predict_btn:
             
             if model:
                 text_input = (
-                    str(target_title) + " " + str(target_title) + " " + 
+                    str(target_title) + " " + 
                     str(target_metier) + " " + 
-                    str(skills_str) + " " + 
+                    str(skills_str) + " " + str(target_experience)+ " "+ str(target_region)+ " "+
                     str(target_desc)
                 )
                 
@@ -343,17 +349,37 @@ if predict_btn:
                     'text_features': [text_input],
                     'metier': [target_metier],
                     'experience': [target_experience],
-                    'region': [target_region]
+                    'region': [target_region],
+                    "desc": [target_desc],
+                    "competences": [target_skills]
                 })
                 
                 try:
                     pred_val = model.predict(input_df)[0]
                     pred_min = pred_val * 0.9
                     pred_max = pred_val * 1.1
-                    st.session_state['prediction'] = {"val": pred_val, "range": (pred_min, pred_max)}
-                    
-                    status.update(label="✅ Analyse terminée avec succès !", state="complete", expanded=False)
-                    
+                    st.session_state['prediction'] = {"val": pred_val, "range": (pred_min, pred_max)}    
+                    status.update(label="✅ Analyse terminée avec succès !", state="complete", expanded=False) 
+                    dates = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                    token_encoded = st.query_params.get("us","")
+                    token_user = unquote(token_encoded)
+                    requete_historique =  requests.post("https://predict-production-28b1.up.railway.app/api/predict/historique", headers = {
+                        'Content-Type': 'application/json',
+                        'Authorization': f'Bearer {token_user}'
+                    },
+                    json={
+                        "salaire_predit": int(pred_val),
+                        "salaire_min": int(pred_min),
+                        "salaire_mensuel": int(pred_max),
+                        "niveau_experience": f"{input_df['experience'].iloc[0]}",
+                        "date_predit": dates,
+                        "description": f"{input_df['desc'].iloc[0]}",
+                        "competences": f"{input_df['competences'].iloc[0]}",
+                        "region": f"{input_df['region'].iloc[0]}",
+                        "titre": f"{input_df['metier'].iloc[0]}"
+                    }
+                    ) 
+
                 except Exception as e:
                     status.update(label="❌ Erreur critique", state="error")
                     st.error(f"Erreur : {e}")
